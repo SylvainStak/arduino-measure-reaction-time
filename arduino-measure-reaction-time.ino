@@ -1,34 +1,32 @@
 #include "DigitLedDisplay.h"
 
-int SRDataPin = 2; 
-int SRLatchPin = 3;
-int SRClockPin = 4;
-int restartButtonPin = 5;
-int reactionButtonPin = 6;
-
-int speakerPin = 12;
-
-int ledSegmentsDIN = 8;
-int ledSegmentsCS = 9;
-int ledSegmentsCLK = 10;
-
+const int SRDataPin = 2; 
+const int SRLatchPin = 3;
+const int SRClockPin = 4;
+const int restartButtonPin = 5;
+const int reactionButtonPin = 6;
+const int ledSegmentsDIN = 8;
+const int ledSegmentsCS = 9;
+const int ledSegmentsCLK = 10;
+const int speakerPin = 12;
 int waitTime = 0;
 int startTime = 0;
 int reactionTime = 0;
 byte SRData = 0; // Shift Register 8-bit storage
 boolean trafficLightsEnded = false;
 
+// Set up led display library object with correct pin numbers
 DigitLedDisplay ld = DigitLedDisplay(ledSegmentsDIN, ledSegmentsCS, ledSegmentsCLK);
 
 void setup() {
   Serial.begin(9600);
+  ld.setBright(6);
+  ld.setDigitLimit(8);
   pinMode(reactionButtonPin, INPUT);
   pinMode(restartButtonPin, INPUT);
   pinMode(SRDataPin, OUTPUT);
-  pinMode(SRClockPin, OUTPUT);  
+  pinMode(SRClockPin, OUTPUT);
   pinMode(SRLatchPin, OUTPUT);
-  ld.setBright(6);
-  ld.setDigitLimit(8);
   turnOffTrafficLights();
 }
 
@@ -41,9 +39,9 @@ void loop() {
     ld.clear();
     reactionTime = millis() - startTime;
     trafficLightsEnded = false;
+    ld.printDigit(reactionTime);
     Serial.print(reactionTime);
     Serial.print('\n');
-    ld.printDigit(reactionTime);
   }
 }
 
