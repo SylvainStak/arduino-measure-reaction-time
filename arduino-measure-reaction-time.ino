@@ -1,13 +1,24 @@
+#include "DigitLedDisplay.h"
+
 int SRDataPin = 2; 
 int SRLatchPin = 3;
 int SRClockPin = 4;
 int restartButtonPin = 5;
 int reactionButtonPin = 6;
+
+int speakerPin = 12;
+
+int ledSegmentsDIN = 8;
+int ledSegmentsCS = 9;
+int ledSegmentsCLK = 10;
+
 int waitTime = 0;
 int startTime = 0;
 int reactionTime = 0;
 byte SRData = 0; // Shift Register 8-bit storage
 boolean trafficLightsEnded = false;
+
+DigitLedDisplay ld = DigitLedDisplay(ledSegmentsDIN, ledSegmentsCS, ledSegmentsCLK);
 
 void setup() {
   Serial.begin(9600);
@@ -16,6 +27,9 @@ void setup() {
   pinMode(SRDataPin, OUTPUT);
   pinMode(SRClockPin, OUTPUT);  
   pinMode(SRLatchPin, OUTPUT);
+  ld.setBright(6);
+  ld.setDigitLimit(8);
+  turnOffTrafficLights();
 }
 
 void loop() {
@@ -24,10 +38,12 @@ void loop() {
   }
 
   if(trafficLightsEnded == true && reactionButtonIsPushed()) {
+    ld.clear();
     reactionTime = millis() - startTime;
     trafficLightsEnded = false;
     Serial.print(reactionTime);
     Serial.print('\n');
+    ld.printDigit(reactionTime);
   }
 }
 
@@ -54,11 +70,14 @@ void startTrafficLights() {
   // Traffic lights pattern with 5 LEDS from pins 3 to 7 on the shift register
   for(int ledIndex=3; ledIndex<=7; ledIndex++) {
     delay(1000);
+    noTone(speakerPin);
     SRWrite(ledIndex, HIGH);
+    tone(speakerPin, 659, 100);
   }
   
   delay(waitTime);
   turnOffTrafficLights();
+  tone(speakerPin, 1319, 100);
   trafficLightsEnded = true;  
   startTime = millis();
 }
