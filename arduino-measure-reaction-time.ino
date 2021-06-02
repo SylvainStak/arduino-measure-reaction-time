@@ -1,4 +1,4 @@
-#include "DigitLedDisplay.h"
+#include "LedControl.h"
 
 const int SRDataPin = 2; 
 const int SRLatchPin = 3;
@@ -14,20 +14,19 @@ int startTime = 0;
 int reactionTime = 0;
 byte SRData = 0; // Shift Register 8-bit storage
 boolean trafficLightsEnded = false;
-
-// Set up led display library object with correct pin numbers
-DigitLedDisplay ld = DigitLedDisplay(ledSegmentsDIN, ledSegmentsCS, ledSegmentsCLK);
+LedControl lc = LedControl(8,10,9,1);
 
 void setup() {
   Serial.begin(9600);
-  ld.setBright(6);
-  ld.setDigitLimit(8);
   pinMode(reactionButtonPin, INPUT);
   pinMode(restartButtonPin, INPUT);
   pinMode(SRDataPin, OUTPUT);
   pinMode(SRClockPin, OUTPUT);
   pinMode(SRLatchPin, OUTPUT);
   turnOffTrafficLights();
+  lc.shutdown(0,false);
+  lc.setIntensity(0,8);
+  lc.clearDisplay(0);
 }
 
 void loop() {
@@ -36,12 +35,10 @@ void loop() {
   }
 
   if(trafficLightsEnded == true && reactionButtonIsPushed()) {
-    ld.clear();
+    lc.clearDisplay(0);
     reactionTime = millis() - startTime;
     trafficLightsEnded = false;
-    ld.printDigit(reactionTime);
-    Serial.print(reactionTime);
-    Serial.print('\n');
+    showReactionTime();
   }
 }
 
@@ -59,6 +56,15 @@ void turnOffTrafficLights() {
   SRWrite(5, LOW);
   SRWrite(6, LOW);
   SRWrite(7, LOW);
+}
+
+int numberOfDigits(int number) {
+  int digits = 0;
+  while(number){
+    number /= 10;
+    digits++;
+  }
+  return digits;
 }
 
 void startTrafficLights() {
@@ -89,4 +95,35 @@ void SRWrite(int SRPin, boolean SRPinState){
   // Activate the latch to let the data pass from the storage to the shift register pins
   digitalWrite(SRLatchPin, HIGH);
   digitalWrite(SRLatchPin, LOW);
+}
+
+// Show reaction time on 7 segment display
+void showReactionTime() {
+  int number = reactionTime;
+  int digits = numberOfDigits(number);
+  int arr[digits];
+  boolean isDecimal = false;
+
+  // Transform the reaction time to an integer array
+  for (int i = digits-1; i >= 0; i--) {
+    arr[i] = number % 10;
+    number /= 10;
+  }
+
+  // Print the correct numbers with decimal points
+  for (int i = digits-1; i >= 0; i--) {
+    if(digits > 3) {
+      isDecimal = i==3?true:false;
+    } else {
+      lc.setDigit(0,3,0,true);
+      if(digits == 2){
+        lc.setDigit(0,2,0,false);
+      }
+      if(digits == 1){
+        lc.setDigit(0,2,0,false);
+        lc.setDigit(0,1,0,false);
+      }
+    }
+    lc.setDigit(0,i,arr[(digits-1)-i],isDecimal);
+  }
 }
